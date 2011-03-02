@@ -1,0 +1,21 @@
+# A simple interface to Kyoto Record.
+# Programmed for ease of use.
+# Please fork.
+
+require 'kyoto_record'
+
+class Duck
+  include KyotoRecord
+  attr_kyoto :nickname, :waddle_power
+  index_kyoto :nickname
+end
+
+donald = Duck.new
+donald.nickname = "Don"
+donald.waddle_power = false
+donald.save
+
+duck2 = Duck.find(1)
+duck3 = Duck.find_by_nickname("Don")
+
+MIT license.  Enjoy.
