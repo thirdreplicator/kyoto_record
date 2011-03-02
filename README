@@ -1,6 +1,15 @@
-# A simple interface to Kyoto Record.
-# Programmed for ease of use.
-# Please fork.
+A simple interface to Kyoto Cabinet, somewhat inspired by Active Record.
+Programmed for ease of use and hopefully speed..... no benchmarks yet.
+
+# Features
+ * Just declare your attributes you want to persist.
+ * Declare your indexes for a reverse lookup by value.
+ * Range scan queries available.
+ * Fast...?
+
+Please fork.
+
+# ---------------------
 
 require 'kyoto_record'
 
@@ -15,7 +24,14 @@ donald.nickname = "Don"
 donald.waddle_power = false
 donald.save
 
+# Reboot your computer.
+# Load back your data.
+
 duck2 = Duck.find(1)
 duck3 = Duck.find_by_nickname("Don")
+
+# Please see kyoto_record_spec.rb for details.
+
+# ---------------------
 
 MIT license.  Enjoy.
