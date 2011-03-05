@@ -47,6 +47,19 @@ describe 'KyotoRecord module' do
     A.find(1).x.should be_an_instance_of( Time )
   end
 
+  it "should be able to save 2 different objects using the same variable" do
+    a = A.new
+    a.username = "David"
+    a.save
+
+    a = A.new
+    a.username = "Bob"
+    a.save
+
+    A.find(1).username.should == "David"      
+    A.find(2).username.should == "Bob"      
+  end
+
   it "should have a last_id of nil if nothing has been saved yet." do
     A.last_id.should == 0
   end
@@ -108,7 +121,7 @@ describe 'KyotoRecord module' do
 
   describe "Iterating over the records." do
     before(:each) do
-      # Insert 100 records
+      # Insert some records
       10.times do |i|
         a = A.new
         a.x = i+1
@@ -148,6 +161,7 @@ describe 'KyotoRecord module' do
       word.should == "56"
     end
   end
+
   describe "Indexing of attributes." do
     before(:each) do
       class A
@@ -169,6 +183,94 @@ describe 'KyotoRecord module' do
       A.find_by_username("David").id.should == 1
       A.find_by_username("David").username.should == "David"
     end
+  end
+
+  describe "DELETE functionality" do
+    it "should be able to delete records by key (class utility function)" do
+      a = A.new
+      a.username = "David"
+      a.save
+      A.find(1).should_not be_nil
+      A.destroy(1)
+      A.find(1).should be_nil
+    end
+
+    it "should be able to delete records by key (instance method)" do
+      a = A.new
+      a.username = "David"
+      a.save
+      A.find(1).should_not be_nil
+      a.destroy
+      A.find(1).should be_nil
+    end
+  end
+
+  describe "UPDATE functionality" do
+    it "should be able to update just by saving over the existing one." do
+      a = A.new
+      a.username = "David"
+      a.save
+
+      # Loop him up.
+      a1 = A.find(1)
+      a1.username.should == "David"
+
+      # Modify him.
+      a1.username = "Bob"
+      a1.save
+
+      # Make sure he changed.
+      A.find(1).username.should == "Bob"
+    end
+
+    it "should be able to update with a instance method." do
+      a = A.new
+      a.username = "David"
+      a.save
+
+      A.find(1).update_attribute(:username, "Bob")
+      A.find(1).username.should == "Bob"  
+    end
+
+    it "should be able to batch update by scanning over a range of ids." do
+      10.times do |i|
+        a = A.new
+        a.username = i+1
+        a.save
+      end
+
+      A.scan(1,5) do |a|
+        a.update_attribute(:username, "Anonymous")
+      end
+
+      A.find(1).username.should  == "Anonymous"
+      A.find(3).username.should  == "Anonymous"
+      A.find(5).username.should  == "Anonymous"
+      A.find(6).username.should  == "6"
+      A.find(7).username.should  == "7"
+      A.find(10).username.should == "10"
+    end
+  end
+
+  describe "DROP the whole database" do
+    it "should be able to drop the whole database." do
+      a = A.new
+      a.username = "David"
+      a.save
+
+      a = A.new
+      a.username = "Bob"
+      a.save
+
+      A.find(1).username.should == "David"
+      A.find(2).username.should == "Bob"
+
+      A.drop_all
+
+      
+      A.find(1).should be_nil
+      A.find(2).should be_nil
+    end  
   end
 
   describe "Auxilliary functions" do
