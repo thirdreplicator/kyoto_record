@@ -19,11 +19,18 @@ describe 'KyotoRecord module' do
     File.exist?('./data/A.kch').should be_true
   end
 
-  it "should retrieve 3 if 3 was saved into a kyoto attribute" do
+  it "find should return an instance of the enhanced user-defined class" do
     @a = A.new
     @a.x = 3
     @a.save
     A.find(1).should be_an_instance_of(A)
+  end
+
+  it "should have an id after being saved." do
+    @a = A.new
+    @a.x = 3
+    @a.save
+    @a.id.should == 1
   end
 
   it "should retrieve 3 if 3 was saved into a kyoto attribute" do
@@ -49,15 +56,17 @@ describe 'KyotoRecord module' do
 
   it "should be able to save 2 different objects using the same variable" do
     a = A.new
-    a.username = "David"
+    a.x = "David"
     a.save
 
     a = A.new
-    a.username = "Bob"
+    a.x = "Bob"
     a.save
 
-    A.find(1).username.should == "David"      
-    A.find(2).username.should == "Bob"      
+    A.find(1).x.should == "David"      
+    A.find(1).id.should == 1
+    A.find(2).x.should == "Bob"      
+    A.find(2).id.should == 2
   end
 
   it "should have a last_id of nil if nothing has been saved yet." do
@@ -184,14 +193,13 @@ describe 'KyotoRecord module' do
       A.find_by_username("David").username.should == "David"
     end
   end
-
   describe "DELETE functionality" do
     it "should be able to delete records by key (class utility function)" do
       a = A.new
       a.username = "David"
       a.save
       A.find(1).should_not be_nil
-      A.destroy(1)
+      A.delete(1)
       A.find(1).should be_nil
     end
 
@@ -200,7 +208,7 @@ describe 'KyotoRecord module' do
       a.username = "David"
       a.save
       A.find(1).should_not be_nil
-      a.destroy
+      a.delete
       A.find(1).should be_nil
     end
   end
@@ -228,7 +236,7 @@ describe 'KyotoRecord module' do
       a.username = "David"
       a.save
 
-      A.find(1).update_attribute(:username, "Bob")
+      A.find(1).update(:username, "Bob")
       A.find(1).username.should == "Bob"  
     end
 
@@ -240,15 +248,15 @@ describe 'KyotoRecord module' do
       end
 
       A.scan(1,5) do |a|
-        a.update_attribute(:username, "Anonymous")
+        a.update(:username, "Anonymous")
       end
 
       A.find(1).username.should  == "Anonymous"
       A.find(3).username.should  == "Anonymous"
       A.find(5).username.should  == "Anonymous"
-      A.find(6).username.should  == "6"
-      A.find(7).username.should  == "7"
-      A.find(10).username.should == "10"
+      A.find(6).username.should  == 6
+      A.find(7).username.should  == 7
+      A.find(10).username.should == 10
     end
   end
 
@@ -265,12 +273,29 @@ describe 'KyotoRecord module' do
       A.find(1).username.should == "David"
       A.find(2).username.should == "Bob"
 
-      A.drop_all
+      A.delete_all
 
-      
       A.find(1).should be_nil
       A.find(2).should be_nil
     end  
+
+    it "should be able to add more items after the database was dropped." do
+      a = A.new
+      a.username = "David"
+      a.save
+
+      A.find(1).username.should == "David"
+
+      A.delete_all
+
+      b = A.new
+      b.username = "Duck"
+      b.id.should be_nil
+      b.save
+
+      b.id.should == 2
+      A.find(2).should_not be_nil
+    end
   end
 
   describe "Auxilliary functions" do

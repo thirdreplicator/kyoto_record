@@ -1,3 +1,4 @@
+# kyoto_record.rb
 require 'kyotocabinet'
 
 module KyotoRecord
@@ -9,12 +10,24 @@ module KyotoRecord
   module Cabinet
     include KyotoCabinet
 
+    DATA_DIR = File.dirname(__FILE__) + '/data'
+
     def find(id)
       value = @db.get(id)
       if value
         obj = Marshal.load( @db.get(id) ) 
         obj.id = id
         obj
+      end
+    end
+
+    def delete(id)
+      @db.remove(id)      
+    end
+
+    def delete_all
+      scan(1, 1/0.0) do |obj|
+        obj.delete
       end
     end
 
@@ -52,16 +65,16 @@ module KyotoRecord
     end
 
     # Utilities
-    def open_db(base_name)
-      Dir.mkdir('data') if !Dir.exists?('data')
+    def open_db
+      Dir.mkdir(DATA_DIR) if !Dir.exists?(DATA_DIR)
       db = DB::new
-      unless db.open("./data/#{base_name}.kch", DB::OWRITER | DB::OCREATE)
+      unless db.open(data_file, DB::OWRITER | DB::OCREATE)
         STDERR.printf("open error: %s\n", db.error)
       end
       db
     end
 
-    def close_db(base_name)
+    def close_db
       unless @db.close
         STDERR.printf("close error: %s\n", db.error)
       end
@@ -70,9 +83,9 @@ module KyotoRecord
     # Utilities
 
     def set(k,v)
-      @db.set(k, Marshal.dump(v))
+      set_error(k,v) unless @db.set(k, Marshal.dump(v))
     end
-
+ 
     def get(k)
       val = @db.get(k)
       Marshal.load(val) if val
@@ -97,6 +110,16 @@ module KyotoRecord
     def class_name
       @class_name ||= self.to_s
     end
+
+    def data_file
+      "#{DATA_DIR}/#{@base_name}.kch"
+    end
+
+    def set_error(k,v)
+      STDERR.printf("set error for (k,v)=(%s, %s): %s\n", k, v, @db.error)
+      raise @db.error
+    end
+
   end # Cabinet
 
   # Reuse the Cabinet module to make indexes of attributes.
@@ -112,7 +135,7 @@ module KyotoRecord
       @klass = klass
       @attr = attribute
       @base_name = klass.to_s + "_" + attribute.to_s
-      @db = open_db(@base_name) 
+      @db = open_db
     end
   end # class Index
 
@@ -121,35 +144,33 @@ module KyotoRecord
     include Cabinet
 
     def attr_kyoto( *attrs )
-      @db = open_db(class_name)
+      @base_name = class_name
+      @db = open_db
 
       @attrs ||= {}
       @indices ||= {} 
 
-      # Don't redefine it if it was already defined.
-      if !self.respond_to?(:id)
-        # a general setter
-        define_method :set_attr do |k, v|
-          @values[k] = v
+      # a general setter
+      define_method :set_attr do |k, v|
+        @values[k] = v
+      end
+
+      # a general getter
+      define_method :get_attr do |k|
+        @values[k]
+      end 
+     
+      def define_getter_and_setter(attr)
+        define_method :"#{attr}".to_s do
+          @values[attr]
         end
   
-        # a general getter
-        define_method :get_attr do |k|
-          @values[k]
-        end 
-       
-        def define_getter_and_setter(attr)
-          define_method :"#{attr}".to_s do
-            @values[attr]
-          end
-    
-          define_method :"#{attr}=".to_s do |val|
-            set_attr(attr, val)
-          end
-        end 
+        define_method :"#{attr}=".to_s do |val|
+          set_attr(attr, val)
+        end
+      end 
 
-        define_getter_and_setter(:id)
-      end # if
+      define_getter_and_setter(:id)
 
       # In case multiple attributes were passed in, let's loop over each one.
       attrs.each do |attr|
@@ -189,12 +210,21 @@ EOM
   def save
     if !id
       # TODO: use KyotoCabinet::DB#increment
-      id = self.class.last_id + 1
+      self.id = self.class.last_id + 1
       self.class.last_id = id
     end
-
+ 
     write_indices(id)
     write_to_kyoto(id, self)
+  end
+
+  def update(attr, value)
+    @values[attr] = value
+    save
+  end
+
+  def delete
+    self.class.delete(self.id)
   end
 
   def write_indices(id)
@@ -204,14 +234,11 @@ EOM
   end
 
   def write_to_kyoto(k, v)
-    set_error(k,v) unless self.class.set(k, v)
+    self.class.set(k, v)
   end
 
   private
 
-  def set_error(k,v)
-    STDERR.printf("set error for (k,v)=(%s, %s): %s\n", k, v, kc.error)
-  end
 
 end
 
