@@ -11,7 +11,6 @@ module KyotoRecord
   module Cabinet
     include KyotoCabinet
 
-
     def find(id)
       value = @db.get(id)
       if value
