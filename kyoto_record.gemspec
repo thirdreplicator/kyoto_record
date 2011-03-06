@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name                     = "kyoto_record"
-  s.version                  = "0.0.2"
+  s.version                  = "0.0.3"
   s.summary                  = "Persist your classes in Kyoto Cabinet."
   s.description              = "\"KyotoRecord\": Kyoto Cabinet wrapper for Ruby binding.  Scannable. Indexable. A programming interface made for babies."
   s.homepage                 = "http://github.com/thirdreplicator/kyoto_record"

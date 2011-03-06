@@ -10,7 +10,7 @@ module KyotoRecord
   module Cabinet
     include KyotoCabinet
 
-    DATA_DIR = File.dirname(__FILE__) + '/data'
+    DATA_DIR = './data'
 
     def find(id)
       value = @db.get(id)
