@@ -19,6 +19,17 @@ describe 'KyotoRecord module' do
     File.exist?('./data/A.kch').should be_true
   end
 
+  it "should have a globally configurable data directory" do
+    KyotoRecord::DATA_DIR = '/tmp/kr'  
+    class B
+      include KyotoRecord
+      attr_kyoto :x
+    end
+    File.exist?('/tmp/kr/B.kch').should be_true
+    `rm -rf /tmp/kr`                   # Clean up.
+    KyotoRecord::DATA_DIR = './data'   # Revert global config back to normal.
+  end
+  
   it "find should return an instance of the enhanced user-defined class" do
     @a = A.new
     @a.x = 3

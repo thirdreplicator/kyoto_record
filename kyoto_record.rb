@@ -6,11 +6,11 @@ module KyotoRecord
   # Refactored out this module so that it can be reused in the class 'Index'
   #  as well as the module ClassMethds, which is directly enhancing the
   #  user-defined data model class.
-
+  DATA_DIR = './data'
+ 
   module Cabinet
     include KyotoCabinet
 
-    DATA_DIR = './data'
 
     def find(id)
       value = @db.get(id)
